@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.example.agrochain.app-mergeDebugResources-2:/values-small-v4/values-small-v4.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\prath\\scoop\\apps\\gradle\\current\\.gradle\\caches\\8.13\\transforms\\5841f13a4a1aa02b26b18cb38e519625\\transformed\\material-1.12.0\\res\\values-small-v4\\values-small-v4.xml",
+                    "from": {
+                        "startLines": "2,3,4,5",
+                        "startColumns": "4,4,4,4",
+                        "startOffsets": "55,128,198,270",
+                        "endColumns": "72,69,71,69",
+                        "endOffsets": "123,193,265,335"
+                    }
+                }
+            ]
+        }
+    ]
+}

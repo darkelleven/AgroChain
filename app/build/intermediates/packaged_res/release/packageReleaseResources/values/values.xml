@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:ns1="http://schemas.android.com/tools">
+    <color name="ic_launcher_background">#1B5E20</color>
+    <color name="md_theme_background">#F2F7F0</color>
+    <color name="md_theme_onPrimary">#FFFFFF</color>
+    <color name="md_theme_primary">#1B5E20</color>
+    <color name="md_theme_secondary">#81C784</color>
+    <string name="app_name">AgroChain</string>
+    <style name="Theme.AgroChain" parent="Theme.Material3.DayNight">
+        <item name="android:statusBarColor" ns1:targetApi="l">?attr/colorPrimary</item>
+        <item name="windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+</resources>

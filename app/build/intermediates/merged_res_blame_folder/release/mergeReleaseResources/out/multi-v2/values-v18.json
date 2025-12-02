@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.example.agrochain.app-mergeReleaseResources-2:/values-v18/values-v18.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\prath\\scoop\\apps\\gradle\\current\\.gradle\\caches\\8.13\\transforms\\e321347866fa93bb55e70fe7c15b2ebb\\transformed\\appcompat-1.7.0\\res\\values-v18\\values-v18.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "48",
+                        "endOffsets": "99"
+                    }
+                }
+            ]
+        }
+    ]
+}
