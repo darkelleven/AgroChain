@@ -28,6 +28,23 @@ class AgroChainViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val authRepository = AuthRepository(application)
 
+    init {
+        // Try to restore persisted user session on startup
+        viewModelScope.launch {
+            try {
+                val storedUser = authRepository.getStoredUser()
+                if (storedUser != null) {
+                    _uiState.update { it.copy(currentUser = storedUser) }
+                    // Fetch listings immediately after restoring session
+                    fetchListings()
+                    addActivity("Restored session for ${storedUser.name}")
+                }
+            } catch (_: Exception) {
+                // ignore restore errors
+            }
+        }
+    }
+
     private val _uiState = MutableStateFlow(
         AgroChainUiState(
             activityLog = listOf(ActivityLogEntry(description = "Platform initialized • ${Instant.now()}"))
@@ -107,7 +124,54 @@ class AgroChainViewModel(application: Application) : AndroidViewModel(applicatio
             try {
                 val response = ApiClient.apiService.getAllListings()
                 if (response.isSuccessful && response.body() != null) {
-                    _uiState.update { it.copy(listings = response.body() ?: emptyList()) }
+                    val gson = com.google.gson.Gson()
+                    val raw = response.body() ?: emptyList()
+                    val parsed = raw.mapNotNull { jsonObj ->
+                        try {
+                            // Normalize ownerId which may be a populated object or a string
+                            val ownerIdElement = when {
+                                jsonObj.has("ownerId") -> jsonObj.get("ownerId")
+                                jsonObj.has("owner") -> jsonObj.get("owner")
+                                else -> null
+                            }
+
+                            val ownerId = when {
+                                ownerIdElement == null || ownerIdElement.isJsonNull -> null
+                                ownerIdElement.isJsonPrimitive -> ownerIdElement.asString
+                                ownerIdElement.isJsonObject -> {
+                                    val obj = ownerIdElement.asJsonObject
+                                    when {
+                                        obj.has("_id") -> obj.get("_id").asString
+                                        obj.has("id") -> obj.get("id").asString
+                                        else -> null
+                                    }
+                                }
+                                else -> null
+                            } ?: ""
+
+                            Listing(
+                                id = if (jsonObj.has("_id")) jsonObj.get("_id").asString else if (jsonObj.has("id")) jsonObj.get("id").asString else java.util.UUID.randomUUID().toString(),
+                                ownerId = ownerId,
+                                ownerRole = com.example.agrochain.model.UserRole.valueOf(jsonObj.get("ownerRole").asString),
+                                type = jsonObj.get("type").asString,
+                                quantityTons = jsonObj.get("quantityTons").asDouble,
+                                quality = jsonObj.get("quality").asString,
+                                priceExpectationPerTon = jsonObj.get("priceExpectationPerTon").asDouble,
+                                location = jsonObj.get("location").asString,
+                                description = if (jsonObj.has("description") && !jsonObj.get("description").isJsonNull) jsonObj.get("description").asString else "",
+                                imageUrl = if (jsonObj.has("imageUrl") && !jsonObj.get("imageUrl").isJsonNull) jsonObj.get("imageUrl").asString else "",
+                                moistureContent = if (jsonObj.has("moistureContent") && !jsonObj.get("moistureContent").isJsonNull) jsonObj.get("moistureContent").asString else "",
+                                proteinContent = if (jsonObj.has("proteinContent") && !jsonObj.get("proteinContent").isJsonNull) jsonObj.get("proteinContent").asString else "",
+                                storageCondition = if (jsonObj.has("storageCondition") && !jsonObj.get("storageCondition").isJsonNull) jsonObj.get("storageCondition").asString else "",
+                                packaging = if (jsonObj.has("packaging") && !jsonObj.get("packaging").isJsonNull) jsonObj.get("packaging").asString else "",
+                                createdAt = java.time.Instant.now()
+                            )
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+
+                    _uiState.update { it.copy(listings = parsed) }
                 }
             } catch (e: Exception) {
                 // Log error silently, listings remain as is
@@ -150,7 +214,50 @@ class AgroChainViewModel(application: Application) : AndroidViewModel(applicatio
 
                 val response = ApiClient.apiService.createListing(listing)
                 if (response.isSuccessful && response.body() != null) {
-                    val createdListing = response.body()!!
+                    val gson = com.google.gson.Gson()
+                    val jsonObj = response.body()!!
+                    val createdListing = try {
+                        // Map JsonObject response into Listing as above
+                        val ownerIdElement = when {
+                            jsonObj.has("ownerId") -> jsonObj.get("ownerId")
+                            jsonObj.has("owner") -> jsonObj.get("owner")
+                            else -> null
+                        }
+                        val ownerId = when {
+                            ownerIdElement == null || ownerIdElement.isJsonNull -> ""
+                            ownerIdElement.isJsonPrimitive -> ownerIdElement.asString
+                            ownerIdElement.isJsonObject -> {
+                                val obj = ownerIdElement.asJsonObject
+                                when {
+                                    obj.has("_id") -> obj.get("_id").asString
+                                    obj.has("id") -> obj.get("id").asString
+                                    else -> ""
+                                }
+                            }
+                            else -> ""
+                        }
+
+                        Listing(
+                            id = if (jsonObj.has("_id")) jsonObj.get("_id").asString else if (jsonObj.has("id")) jsonObj.get("id").asString else java.util.UUID.randomUUID().toString(),
+                            ownerId = ownerId,
+                            ownerRole = com.example.agrochain.model.UserRole.valueOf(jsonObj.get("ownerRole").asString),
+                            type = jsonObj.get("type").asString,
+                            quantityTons = jsonObj.get("quantityTons").asDouble,
+                            quality = jsonObj.get("quality").asString,
+                            priceExpectationPerTon = jsonObj.get("priceExpectationPerTon").asDouble,
+                            location = jsonObj.get("location").asString,
+                            description = if (jsonObj.has("description") && !jsonObj.get("description").isJsonNull) jsonObj.get("description").asString else "",
+                            imageUrl = if (jsonObj.has("imageUrl") && !jsonObj.get("imageUrl").isJsonNull) jsonObj.get("imageUrl").asString else "",
+                            moistureContent = if (jsonObj.has("moistureContent") && !jsonObj.get("moistureContent").isJsonNull) jsonObj.get("moistureContent").asString else "",
+                            proteinContent = if (jsonObj.has("proteinContent") && !jsonObj.get("proteinContent").isJsonNull) jsonObj.get("proteinContent").asString else "",
+                            storageCondition = if (jsonObj.has("storageCondition") && !jsonObj.get("storageCondition").isJsonNull) jsonObj.get("storageCondition").asString else "",
+                            packaging = if (jsonObj.has("packaging") && !jsonObj.get("packaging").isJsonNull) jsonObj.get("packaging").asString else "",
+                            createdAt = java.time.Instant.now()
+                        )
+                    } catch (e: Exception) {
+                        listing
+                    }
+
                     _uiState.update {
                         it.copy(
                             listings = listOf(createdListing) + it.listings,

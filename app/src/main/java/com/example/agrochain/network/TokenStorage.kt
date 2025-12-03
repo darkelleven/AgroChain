@@ -15,11 +15,18 @@ class TokenStorage(private val context: Context) {
     companion object {
         private val TOKEN_KEY = stringPreferencesKey("jwt_token")
         private val USER_ID_KEY = stringPreferencesKey("user_id")
+        private val USER_JSON_KEY = stringPreferencesKey("user_json")
     }
 
     suspend fun saveToken(token: String) {
         context.dataStore.edit { preferences ->
             preferences[TOKEN_KEY] = token
+        }
+    }
+
+    suspend fun saveUserJson(userJson: String) {
+        context.dataStore.edit { preferences ->
+            preferences[USER_JSON_KEY] = userJson
         }
     }
 
@@ -29,10 +36,17 @@ class TokenStorage(private val context: Context) {
         }
     }
 
+    suspend fun getUserJson(): Flow<String?> {
+        return context.dataStore.data.map { preferences ->
+            preferences[USER_JSON_KEY]
+        }
+    }
+
     suspend fun clearToken() {
         context.dataStore.edit { preferences ->
             preferences.remove(TOKEN_KEY)
             preferences.remove(USER_ID_KEY)
+            preferences.remove(USER_JSON_KEY)
         }
     }
 }

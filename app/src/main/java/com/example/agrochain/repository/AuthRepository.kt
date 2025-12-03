@@ -29,6 +29,12 @@ class AuthRepository(private val context: Context) {
                 val authResponse = response.body()!!
                 val user = authResponse.user.toUser()
                 tokenStorage.saveToken(authResponse.token)
+                // Persist the user JSON so we can restore session after app restart
+                try {
+                    tokenStorage.saveUserJson(gson.toJson(user))
+                } catch (e: Exception) {
+                    // ignore persistence errors
+                }
                 Result.success(Pair(user, authResponse.token))
             } else {
                 val errorBody = response.errorBody()?.string()
@@ -64,6 +70,11 @@ class AuthRepository(private val context: Context) {
                 val authResponse = response.body()!!
                 val user = authResponse.user.toUser()
                 tokenStorage.saveToken(authResponse.token)
+                try {
+                    tokenStorage.saveUserJson(gson.toJson(user))
+                } catch (e: Exception) {
+                    // ignore persistence errors
+                }
                 Result.success(Pair(user, authResponse.token))
             } else {
                 val errorBody = response.errorBody()?.string()
@@ -86,5 +97,15 @@ class AuthRepository(private val context: Context) {
 
     suspend fun getStoredToken(): String? {
         return tokenStorage.getToken().first()
+    }
+
+    suspend fun getStoredUser(): User? {
+        return try {
+            val json = tokenStorage.getUserJson().first()
+            if (json == null) return null
+            gson.fromJson(json, User::class.java)
+        } catch (e: Exception) {
+            null
+        }
     }
 }
