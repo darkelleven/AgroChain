@@ -14,6 +14,7 @@ import com.example.agrochain.model.Offer
 import com.example.agrochain.model.User
 import com.example.agrochain.model.UserRole
 import com.example.agrochain.repository.AuthRepository
+import com.example.agrochain.network.ApiClient
 import com.example.agrochain.ui.state.AgroChainUiState
 import java.time.Instant
 import java.util.Locale
@@ -94,9 +95,22 @@ class AgroChainViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             val currentName = _uiState.value.currentUser?.name
             authRepository.logout()
-            _uiState.update { it.copy(currentUser = null) }
+            _uiState.update { it.copy(currentUser = null, listings = emptyList()) }
             if (currentName != null) {
                 addActivity("$currentName logged out")
+            }
+        }
+    }
+
+    fun fetchListings() {
+        viewModelScope.launch {
+            try {
+                val response = ApiClient.apiService.getAllListings()
+                if (response.isSuccessful && response.body() != null) {
+                    _uiState.update { it.copy(listings = response.body() ?: emptyList()) }
+                }
+            } catch (e: Exception) {
+                // Log error silently, listings remain as is
             }
         }
     }
@@ -115,36 +129,43 @@ class AgroChainViewModel(application: Application) : AndroidViewModel(applicatio
         packaging: String = ""
     ) {
         val user = _uiState.value.currentUser ?: return
-        // Any user can create listings now
 
-        val listing = Listing(
-            ownerId = user.id,
-            ownerRole = user.role,
-            type = type,
-            quantityTons = quantityTons,
-            quality = quality,
-            priceExpectationPerTon = pricePerTon,
-            location = location,
-            description = description,
-            imageUrl = imageUrl,
-            moistureContent = moistureContent,
-            proteinContent = proteinContent,
-            storageCondition = storageCondition,
-            packaging = packaging
-        )
+        viewModelScope.launch {
+            try {
+                val listing = Listing(
+                    ownerId = user.id,
+                    ownerRole = user.role,
+                    type = type,
+                    quantityTons = quantityTons,
+                    quality = quality,
+                    priceExpectationPerTon = pricePerTon,
+                    location = location,
+                    description = description,
+                    imageUrl = imageUrl,
+                    moistureContent = moistureContent,
+                    proteinContent = proteinContent,
+                    storageCondition = storageCondition,
+                    packaging = packaging
+                )
 
-        _uiState.update {
-            it.copy(
-                listings = listOf(listing) + it.listings,
-                activityLog = listOf(activityEntry("${user.name} listed $type (${quantityTons}T) from $location")) + it.activityLog
-            )
+                val response = ApiClient.apiService.createListing(listing)
+                if (response.isSuccessful && response.body() != null) {
+                    val createdListing = response.body()!!
+                    _uiState.update {
+                        it.copy(
+                            listings = listOf(createdListing) + it.listings,
+                            activityLog = listOf(activityEntry("${user.name} listed $type (${quantityTons}T) from $location")) + it.activityLog
+                        )
+                    }
+                    broadcastNotification(
+                        recipientIds = _uiState.value.availableUsers.map(User::id),
+                        message = "New ${listing.type} listing (${listing.quantityTons}T) from ${user.name}"
+                    )
+                }
+            } catch (e: Exception) {
+                // Log error
+            }
         }
-
-        // Notify all users about new listing
-        broadcastNotification(
-            recipientIds = _uiState.value.availableUsers.map(User::id),
-            message = "New ${listing.type} listing (${listing.quantityTons}T) from ${user.name}"
-        )
     }
 
     fun makeOffer(listingId: String, offerPrice: Double, message: String) {
