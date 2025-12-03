@@ -44,4 +44,20 @@ data class ErrorResponse(
     val error: String?
 )
 
+data class CreateListingRequest(
+    val ownerId: String,
+    val ownerRole: String,
+    val type: String,
+    val quantityTons: Double,
+    val quality: String,
+    val priceExpectationPerTon: Double,
+    val location: String,
+    val description: String = "",
+    val imageUrl: String = "",
+    val moistureContent: String = "",
+    val proteinContent: String = "",
+    val storageCondition: String = "",
+    val packaging: String = ""
+)
+
 

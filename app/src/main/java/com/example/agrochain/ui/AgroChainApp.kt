@@ -426,6 +426,10 @@ private fun DashboardScreen(
         }
     }
 
+    LaunchedEffect(user.id) {
+        viewModel.fetchListings()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(

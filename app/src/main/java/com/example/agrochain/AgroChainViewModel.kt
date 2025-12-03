@@ -15,6 +15,7 @@ import com.example.agrochain.model.User
 import com.example.agrochain.model.UserRole
 import com.example.agrochain.repository.AuthRepository
 import com.example.agrochain.network.ApiClient
+import com.example.agrochain.network.CreateListingRequest
 import com.example.agrochain.ui.state.AgroChainUiState
 import java.time.Instant
 import java.util.Locale
@@ -196,14 +197,14 @@ class AgroChainViewModel(application: Application) : AndroidViewModel(applicatio
 
         viewModelScope.launch {
             try {
-                val listing = Listing(
+                val request = CreateListingRequest(
                     ownerId = user.id,
-                    ownerRole = user.role,
-                    type = type,
+                    ownerRole = user.role.name,
+                    type = type.trim(),
                     quantityTons = quantityTons,
                     quality = quality,
                     priceExpectationPerTon = pricePerTon,
-                    location = location,
+                    location = location.trim(),
                     description = description,
                     imageUrl = imageUrl,
                     moistureContent = moistureContent,
@@ -212,10 +213,27 @@ class AgroChainViewModel(application: Application) : AndroidViewModel(applicatio
                     packaging = packaging
                 )
 
-                val response = ApiClient.apiService.createListing(listing)
+                val response = ApiClient.apiService.createListing(request)
                 if (response.isSuccessful && response.body() != null) {
                     val gson = com.google.gson.Gson()
                     val jsonObj = response.body()!!
+                    // A preview listing used as fallback and for immediate UI updates
+                    val previewListing = Listing(
+                        ownerId = user.id,
+                        ownerRole = user.role,
+                        type = type,
+                        quantityTons = quantityTons,
+                        quality = quality,
+                        priceExpectationPerTon = pricePerTon,
+                        location = location,
+                        description = description,
+                        imageUrl = imageUrl,
+                        moistureContent = moistureContent,
+                        proteinContent = proteinContent,
+                        storageCondition = storageCondition,
+                        packaging = packaging
+                    )
+
                     val createdListing = try {
                         // Map JsonObject response into Listing as above
                         val ownerIdElement = when {
@@ -255,7 +273,7 @@ class AgroChainViewModel(application: Application) : AndroidViewModel(applicatio
                             createdAt = java.time.Instant.now()
                         )
                     } catch (e: Exception) {
-                        listing
+                        previewListing
                     }
 
                     _uiState.update {
@@ -266,7 +284,7 @@ class AgroChainViewModel(application: Application) : AndroidViewModel(applicatio
                     }
                     broadcastNotification(
                         recipientIds = _uiState.value.availableUsers.map(User::id),
-                        message = "New ${listing.type} listing (${listing.quantityTons}T) from ${user.name}"
+                        message = "New ${previewListing.type} listing (${previewListing.quantityTons}T) from ${user.name}"
                     )
                 }
             } catch (e: Exception) {

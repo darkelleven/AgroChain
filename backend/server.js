@@ -5,6 +5,15 @@ require('dotenv').config();
 
 const app = express();
 
+// Global error handlers to surface silent crashes
+process.on('uncaughtException', (err) => {
+  console.error('💥 Uncaught Exception:', err && err.stack ? err.stack : err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 // Middleware
 app.use(cors({
   origin: '*', // Allow all origins for development
@@ -80,6 +89,8 @@ app.use('/api/contracts', require('./routes/contracts'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/chats', require('./routes/chats'));
 app.use('/api/activity', require('./routes/activity'));
+// Debug routes (development only)
+app.use('/api/debug', require('./routes/debug'));
 
 // Health check endpoint
 app.get('/health', (req, res) => {

@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit
 
 object ApiClient {
     // Production backend URL - replace with your deployed API domain (must include trailing `/api/`)
-    private const val PROD_BASE_URL = "https://api.example.com/api/"
+    private const val PROD_BASE_URL = "https://agrochain-2.onrender.com/api/"
     // Local development URL for physical device testing. Use adb reverse (see instructions) or
     // replace with your machine LAN IP if testing over Wi-Fi.
     private const val DEV_BASE_URL = "http://127.0.0.1:3000/api/"

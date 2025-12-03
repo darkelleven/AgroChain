@@ -26,7 +26,7 @@ interface ApiService {
     suspend fun getListing(@Path("id") id: String): Response<JsonObject>
 
     @POST("listings")
-    suspend fun createListing(@Body listing: Listing): Response<JsonObject>
+    suspend fun createListing(@Body listing: CreateListingRequest): Response<JsonObject>
 
     @PUT("listings/{id}")
     suspend fun updateListing(@Path("id") id: String, @Body listing: Listing): Response<JsonObject>

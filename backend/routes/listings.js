@@ -53,7 +53,11 @@ router.get('/:id', async (req, res) => {
 // Create listing
 router.post('/', async (req, res) => {
   try {
-    const listing = new Listing(req.body);
+    // Sanitize input: prevent client from forcing server-controlled fields
+    const data = { ...req.body };
+    delete data.createdAt;
+    delete data._id;
+    const listing = new Listing(data);
     await listing.save();
     
     const populatedListing = await Listing.findById(listing._id)
@@ -68,9 +72,14 @@ router.post('/', async (req, res) => {
 // Update listing
 router.put('/:id', async (req, res) => {
   try {
+    // Sanitize update payload to avoid casting errors
+    const updateData = { ...req.body };
+    delete updateData.createdAt;
+    delete updateData._id;
+
     const listing = await Listing.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateData,
       { new: true, runValidators: true }
     ).populate('ownerId', 'name email role');
     
