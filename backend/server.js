@@ -21,18 +21,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // MongoDB Connection
-// Require explicit production URI to avoid silent fallback to localhost
-const envMongoUri = process.env.MONGODB_URI;
-if (!envMongoUri && process.env.NODE_ENV === 'production') {
-  console.error('FATAL: MONGODB_URI is not set in production. Set it in env and restart.');
-  process.exit(1);
-}
-const MONGODB_URI = envMongoUri || 'mongodb://127.0.0.1:27017/agrochain';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/agrochain';
 let isMongoConnected = false;
-
-// Log which MongoDB URI we are using (mask credentials)
-const masked = MONGODB_URI.replace(/\/\/.*@/, '//***@');
-console.log('Using MongoDB URI:', masked);
 
 // Export connection status for use in routes
 app.locals.isMongoConnected = () => isMongoConnected;
@@ -42,9 +32,8 @@ const connectMongoDB = async () => {
   try {
     // Remove deprecated options `useNewUrlParser` and `useUnifiedTopology`.
     // The MongoDB Node.js driver and Mongoose v6+ handle these by default.
-    // Use the computed MONGODB_URI and await the connection
     await mongoose.connect(MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000
+      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
     });
     isMongoConnected = true;
     console.log('✅ Connected to MongoDB');
